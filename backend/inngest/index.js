@@ -40,7 +40,7 @@ const syncUserUpdatation = inngest.createFunction(
     async({event})=>{
         const {data} = event;
         console.log(data);
-        await prisma.user.updateMany({
+        await prisma.user.update({
             where: {
                 id: data.id,
             },
