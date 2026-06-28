@@ -8,16 +8,18 @@ import "dotenv/config";
 neonConfig.webSocketConstructor = ws;
 
 const connectionString = process.env.DATABASE_URL;
-
+console.log(connectionString);
 if (!connectionString) {
   throw new Error("DATABASE_URL variable is missing inside environment mappings.");
 }
 
-// 2. Open an optimized serverless connection pool 
-const pool = new Pool({ connectionString });
+const adapter = new PrismaNeon({ connectionString });
 
-// 3. Bind the Neon connection pool into the Prisma Adapter structure
-const adapter = new PrismaNeon(pool);
+// Prevent multiple instances of Prisma Client from freezing connections during hot-reloads
+const globalForPrisma = globalThis;
 
-// 4. Feed the driver adapter directly to Prisma Client
-export const prisma = new PrismaClient({ adapter });
+export const prisma = globalForPrisma.prisma || new PrismaClient({ adapter });
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma;
+}
