@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "postinstall": "npx prisma generate",
-    "start": "prisma generate && node server.js",
+    "start": "chmod +X ./node_modules/.bin/prisma && prisma generate && node server.js",
     "server": "nodemon server.js"
   },
   "keywords": [],
