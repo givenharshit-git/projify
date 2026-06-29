@@ -107,7 +107,7 @@ const syncWorkspaceUpdatation = inngest.createFunction(
 
 // Inngest function to delete workspace from database
 const syncWorkspaceDeletion = inngest.createFunction(
-    {id: 'delete-workspace-from-db', triggers: [{ event: "clerk/organization.deleted" }]},
+    {id: 'delete-workspace-with-clerk', triggers: [{ event: "clerk/organization.deleted" }]},
     async({event})=>{
         const {data} = event;
 
