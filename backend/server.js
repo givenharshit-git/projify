@@ -12,7 +12,7 @@ app.use(cors());
 app.use("/api/inngest", serve({ client: inngest, functions }));
 app.use(clerkMiddleware())
 
-app.get('/api/inngest', (req, res) => {
+app.get('/', (req, res) => {
   res.send('Inngest endpoint working')
 })
 
