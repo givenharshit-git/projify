@@ -1,57 +1,59 @@
 import { Inngest } from "inngest";
 import { prisma } from "../config/prisma.js";
 
-// Create a client to send and receive events
 export const inngest = new Inngest({ id: "projify" });
 
-// Inngest function to create a user
+const getPrimaryEmail = (data) => data?.email_addresses?.[0]?.email_address;
+const getFullName = (data) =>
+  [data?.first_name, data?.last_name].filter(Boolean).join(" ") || getPrimaryEmail(data) || "User";
+
+const getUserData = (data) => ({
+  email: getPrimaryEmail(data),
+  name: getFullName(data),
+  image: data?.image_url || "",
+});
+
 const syncUserCreation = inngest.createFunction(
-    {id: 'sync-user-from-clerk', triggers: [{ event: "clerk/user.created" }] },
-    async({event})=>{
-        const {data} = event;
+  { id: "sync-user-from-clerk", triggers: [{ event: "clerk/user.created" }] },
+  async ({ event }) => {
+    const { data } = event;
 
-        await prisma.user.create({
-            data:{
-                id: data.id,
-                email: data?.email_addresses[0]?.email_address,
-                name: data?.first_name+ " " + data?.last_name,
-                image: data?.image_url
-            }
-        })
-    }
+    await prisma.user.upsert({
+      where: { id: data.id },
+      create: {
+        id: data.id,
+        ...getUserData(data),
+      },
+      update: getUserData(data),
+    });
+  }
 );
 
-// Inngest function to delete a user
 const syncUserDeletion = inngest.createFunction(
-    {id: 'delete-user-with-clerk', triggers: [{ event: "clerk/user.deleted" }] },
-    async({event})=>{
-        const {data} = event;
-        await prisma.user.delete({
-            where: {
-                id: data.id,
-            }
-        });
-    }
+  { id: "delete-user-with-clerk", triggers: [{ event: "clerk/user.deleted" }] },
+  async ({ event }) => {
+    const { data } = event;
+
+    await prisma.user.deleteMany({
+      where: { id: data.id },
+    });
+  }
 );
 
-// Inngest function to update user
-const syncUserUpdatation = inngest.createFunction(
-    {id: 'update-user-from-clerk', triggers: [{ event: "clerk/user.updated" }]},
-    async({event})=>{
-        const {data} = event;
-        console.log(data);
-        await prisma.user.update({
-            where: {
-                id: data.id,
-            },
-            data: {
-                email: data?.email_addresses[0]?.email_address,
-                name: data?.first_name+ " " + data?.last_name,
-                image: data?.image_url
-            }
-        })
-    }
+const syncUserUpdate = inngest.createFunction(
+  { id: "update-user-from-clerk", triggers: [{ event: "clerk/user.updated" }] },
+  async ({ event }) => {
+    const { data } = event;
+
+    await prisma.user.upsert({
+      where: { id: data.id },
+      create: {
+        id: data.id,
+        ...getUserData(data),
+      },
+      update: getUserData(data),
+    });
+  }
 );
 
-// Create an empty array where we'll export future Inngest functions
-export const functions = [syncUserCreation, syncUserDeletion, syncUserUpdatation];
+export const functions = [syncUserCreation, syncUserDeletion, syncUserUpdate];
