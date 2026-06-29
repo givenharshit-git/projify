@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { dummyWorkspaces } from "../../../frontend/src/assets/assets";
-import api from "../../configs/api";
+import { dummyWorkspaces } from "../assets/assets.js";
+import api from "../../configs/api.js";
 
 export const fetchWorkspaces = createAsyncThunk('workspace/fetchWorkspaces', async ({ getToken }) => {
     try {
@@ -10,14 +10,15 @@ export const fetchWorkspaces = createAsyncThunk('workspace/fetchWorkspaces', asy
             }
         })
 
+        // Backend returns array directly
         if (Array.isArray(data)) {
             return data;
         }
 
         return data?.workspaces || [];
     } catch (error) {
-        console.log(error?.response?.data?.message || error.message);
-        return [];
+        console.error('Workspace fetch error:', error?.response?.data?.message || error.message);
+        throw error;
     };
 })
 
