@@ -4,19 +4,25 @@ import { prisma } from "../config/prisma.js";
 // Create a client to send and receive events
 export const inngest = new Inngest({ id: "projify" });
 
+const getUserData = (data) => ({
+    email: data?.email_addresses?.[0]?.email_address,
+    name: [data?.first_name, data?.last_name].filter(Boolean).join(" ") || "User",
+    image: data?.image_url || ""
+});
+
 // Inngest function to create a user
 const syncUserCreation = inngest.createFunction(
     {id: 'sync-user-from-clerk', triggers: [{ event: "clerk/user.created" }] },
     async({event})=>{
         const {data} = event;
 
-        await prisma.user.create({
-            data:{
+        await prisma.user.upsert({
+            where: { id: data.id },
+            create: {
                 id: data.id,
-                email: data?.email_addresses[0]?.email_address,
-                name: data?.first_name+ " " + data?.last_name,
-                image: data?.image_url
-            }
+                ...getUserData(data)
+            },
+            update: getUserData(data)
         })
     }
 );
@@ -26,7 +32,7 @@ const syncUserDeletion = inngest.createFunction(
     {id: 'delete-user-with-clerk', triggers: [{ event: "clerk/user.deleted" }] },
     async({event})=>{
         const {data} = event;
-        await prisma.user.delete({
+        await prisma.user.deleteMany({
             where: {id: data.id}
         });
     }
@@ -38,16 +44,15 @@ const syncUserUpdatation = inngest.createFunction(
     {id: 'update-user-from-clerk', triggers: [{ event: "clerk/user.updated" }]},
     async({event})=>{
         const {data} = event;
-        console.log(data);
-        await prisma.user.update({
+        await prisma.user.upsert({
             where: {
                 id: data.id,
             },
-            data: {
-                email: data?.email_addresses[0]?.email_address,
-                name: data?.first_name+ " " + data?.last_name,
-                image: data?.image_url
-            }
+            create: {
+                id: data.id,
+                ...getUserData(data)
+            },
+            update: getUserData(data)
         })
     }
 );

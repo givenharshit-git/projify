@@ -9,8 +9,8 @@ const app = express();
 
 app.use(express.json());
 app.use(cors());
-app.use("/api/inngest", serve({ client: inngest, functions }));
 app.use(clerkMiddleware())
+app.use("/api/inngest", serve({ client: inngest, functions }));
 
 app.get('/', (req, res) => {
   res.send('Inngest endpoint working')
