@@ -1,30 +1,24 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
-import { neonConfig } from "@neondatabase/serverless";
+import { Pool, neonConfig } from "@neondatabase/serverless";
 import ws from "ws";
 import "dotenv/config";
 
+// 1. Tell Neon how to manage WebSockets globally inside your serverless runtime
 neonConfig.webSocketConstructor = ws;
 
-const connectionString = process.env.DATABASE_URL || process.env.DIRECT_URL;
-
+const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
-  throw new Error("DATABASE_URL or DIRECT_URL is missing from the environment.");
-}
-
-if (!connectionString.startsWith("postgresql://") && !connectionString.startsWith("postgres://")) {
-  throw new Error("DATABASE_URL must be a valid PostgreSQL connection string.");
+  throw new Error("DATABASE_URL variable is missing inside environment mappings.");
 }
 
 const adapter = new PrismaNeon({ connectionString });
+
+// Prevent multiple instances of Prisma Client from freezing connections during hot-reloads
 const globalForPrisma = globalThis;
 
-export const prisma =
-  globalForPrisma.prisma ||
-  new PrismaClient({
-    adapter,
-  });
+export const prisma = globalForPrisma.prisma || new PrismaClient({ adapter });
 
-if (process.env.NODE_ENV !== "production") {
+if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma;
 }
