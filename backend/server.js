@@ -24,5 +24,8 @@ app.use('/api/projects', protect, projectRouter);
 app.use('/api/tasks', protect, taskRouter);
 app.use('/api/comments', protect, commentRouter);
 
+// Server fronend
+app.get('/', (req, res)=>{res.send("Server is Live, Buddy!")})
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, ()=>console.log(`Server is running on port ${PORT}`));
