@@ -1,0 +1,10 @@
+import express from 'express';
+import { addMember, createProject, updateProject } from '../controller/project.js';
+
+const projectRouter = express.Router();
+
+projectRouter.post('/', createProject);
+projectRouter.put('/', updateProject);
+projectRouter.post('/:projectId/add-member', addMember);
+
+export default projectRouter;
