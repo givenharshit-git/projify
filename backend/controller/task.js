@@ -21,6 +21,7 @@ export const createTask = async (req, res) => {
         } else if (assigneeId && !project.members.find((member) => member.user.id === assigneeId)) {
             return res.status(403).json({ message: "assignee is not a member of the project/workspace" })
         }
+
         const task = await prisma.task.create({
             data: {
                 projectId,
@@ -29,6 +30,7 @@ export const createTask = async (req, res) => {
                 priority,
                 assigneeId,
                 status,
+                type,
                 due_date: new Date(due_date)
             }
         })
@@ -38,13 +40,16 @@ export const createTask = async (req, res) => {
             include: { assignee: true }
         })
 
-        await inngest.send({
-            name: "app/task.assigned",
-            data: {
-                taskId: task.id,
-                origin
-            }
-        })
+        // Only send email if task has an assignee
+        if (assigneeId) {
+            await inngest.send({
+                name: "app/task.assigned",
+                data: {
+                    taskId: task.id,
+                    origin
+                }
+            })
+        }
 
         res.json({ task: taskWithAssignee, message: "Task created successfully" })
     } catch (error) {
@@ -77,11 +82,11 @@ export const updateTask = async (req, res) => {
             return res.status(403).json({ message: "You don't have admin previleges for this project" });
         }
 
-        const updateTask = await prisma.task.update({
+        const updatedTask = await prisma.task.update({
             where: { id: req.params.id },
             data: req.body
         })
-        res.json({ task: updateTask, message: "Task updated successfully" })
+        res.json({ task: updatedTask, message: "Task updated successfully" })
     } catch (error) {
         console.log(error);
         res.status(505).json({ message: error.code || error.message });
@@ -92,12 +97,12 @@ export const updateTask = async (req, res) => {
 export const deleteTask = async (req, res) => {
     try {
         const { userId } = await req.auth();
-        const { taskIds } = req.body;
-        const task = await prisma.task.findMany({
-            where: { id: { in: taskIds } }
+        const { tasksIds } = req.body;
+        const tasks = await prisma.task.findMany({
+            where: { id: { in: tasksIds } }
         })
 
-        if (task.length === 0) {
+        if (tasks.length === 0) {
             return res.status(404).json({ message: "Task not found" });
         }
 
@@ -113,7 +118,7 @@ export const deleteTask = async (req, res) => {
         }
 
         await prisma.task.deleteMany({
-            where:{id:{in: taskIds}}
+            where: { id: { in: tasksIds } }
         })
 
         res.json({ message: "Task updated successfully" })

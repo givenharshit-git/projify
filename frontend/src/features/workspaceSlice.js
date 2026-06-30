@@ -1,6 +1,23 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { dummyWorkspaces } from "../assets/assets.js";
-import api from "../../configs/api.js";
+import { dummyWorkspaces } from "../../../frontend/src/assets/assets";
+import api from "../../configs/api";
+
+// export const fetchWorkspaces = createAsyncThunk('workspace/fetchWorkspaces', async ({ getToken }) => {
+//     try {
+//         const { data } = await api.get('/api/workspaces', {
+//             headers: {
+//                 Authorization: `Bearer ${await getToken()}`
+//             }
+//         })
+//         console.log('RAW data from API:', data);          // TEMP
+//         console.log('data.workspaces:', data.workspaces);  // TEMP
+//         return data.workspaces || [];
+//     } catch (error) {
+//         console.log(error?.response?.data?.message || error.message);
+//         return [];
+//     };
+// })
+
 
 export const fetchWorkspaces = createAsyncThunk('workspace/fetchWorkspaces', async ({ getToken }) => {
     try {
@@ -10,15 +27,11 @@ export const fetchWorkspaces = createAsyncThunk('workspace/fetchWorkspaces', asy
             }
         })
 
-        // Backend returns array directly
-        if (Array.isArray(data)) {
-            return data;
-        }
-
-        return data?.workspaces || [];
+        // Backend returns the workspaces array directly, not wrapped in { workspaces: [...] }
+        return Array.isArray(data) ? data : (data.workspaces || []);
     } catch (error) {
-        console.error('Workspace fetch error:', error?.response?.data?.message || error.message);
-        throw error;
+        console.log(error?.response?.data?.message || error.message);
+        return [];
     };
 })
 

@@ -22,6 +22,7 @@ export const getUserWorkspaces = async(req, res) => {
             }
 
         });
+        console.log('GET /api/workspaces userId:', userId, 'count:', workspaces.length); // TEMP
         res.json(workspaces);
     } catch (error) {
         console.log(error);

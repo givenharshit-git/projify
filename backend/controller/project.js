@@ -12,7 +12,7 @@ export const createProject = async (req, res) => {
                 id: workspaceId
             },
             include: {
-                member: { include: { user: true } }
+                members: { include: { user: true } }
             }
         })
         if (!workspace) {
@@ -46,15 +46,15 @@ export const createProject = async (req, res) => {
 
         // Add member to the project if they are in the workspace
         if (team_members?.length > 0) {
-            const memberToAdd = []
-            workspace.member.forEach(member => {
+            const membersToAdd = []
+            workspace.members.forEach(member => {
                 if (team_members.includes(member.user.email)) {
-                    memberToAdd.psuh(member.user.id);
+                    membersToAdd.push(member.user.id);
                 }
             });
 
             await prisma.projectMember.createMany({
-                data: memberToAdd.map((memberId) => ({
+                data: membersToAdd.map((memberId) => ({
                     projectId: project.id,
                     userId: memberId
                 }))
@@ -65,7 +65,7 @@ export const createProject = async (req, res) => {
                 id: project.id
             },
             include: {
-                member: { include: { user: true } },
+                members: { include: { user: true } },
                 tasks: { include: { assignee: true, comments: { include: { user: true } } } },
                 owner: true
             }
@@ -90,7 +90,7 @@ export const updateProject = async (req, res) => {
                 id: workspaceId
             },
             include: {
-                member: { include: { user: true } }
+                members: { include: { user: true } }
             }
         })
         if (!workspace) {
@@ -107,6 +107,7 @@ export const updateProject = async (req, res) => {
                 return res.status(403).json({ message: "You don't have permission to create projects in the workspace" });
             }
         }
+
         const project = await prisma.project.update({
             where: { id },
             data: {
@@ -137,7 +138,7 @@ export const addMember = async (req, res) => {
         // Check if user is project lead
         const project = await prisma.project.findUnique({
             where: { id: projectId },
-            include: { member: { include: { user: true } } }
+            include: { members: { include: { user: true } } }
         })
 
         if (!project) {
@@ -149,7 +150,7 @@ export const addMember = async (req, res) => {
         }
 
         // Check if user is already a member
-        const existingMember = project.member.find((member) => member.email === email);
+        const existingMember = project.members.find((member) => member.email === email);
         if (existingMember) {
             return res.status(400).json({ message: "User is already a member" });
         }

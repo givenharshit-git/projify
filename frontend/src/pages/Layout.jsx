@@ -7,8 +7,10 @@ import { loadTheme } from '../features/themeSlice'
 import { Loader2Icon } from 'lucide-react'
 import { useUser, SignIn, useAuth, CreateOrganization } from '@clerk/react'
 import { fetchWorkspaces } from '../features/workspaceSlice'
+import { useOrganizationList } from '@clerk/react'
 
 const Layout = () => {
+    const { userMemberships } = useOrganizationList({ userMemberships: true });
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
     const { loading, workspaces } = useSelector((state) => state.workspace)
     const dispatch = useDispatch()
@@ -20,12 +22,14 @@ const Layout = () => {
         dispatch(loadTheme())
     }, [])
 
-    // Initial load of workspace
-    useEffect(() => {
-        if (!isLoaded || !user || loading || workspaces.length > 0) return;
 
-        dispatch(fetchWorkspaces({ getToken }));
-    }, [dispatch, getToken, isLoaded, loading, user, workspaces.length])
+    useEffect(() => {
+        console.log('fetch effect check — isLoaded:', isLoaded, 'user:', !!user, 'workspaces.length:', workspaces.length); // TEMP
+        if (isLoaded && user && workspaces.length === 0) {
+            console.log('DISPATCHING fetchWorkspaces'); // TEMP
+            dispatch(fetchWorkspaces({ getToken }));
+        }
+    }, [user, isLoaded, workspaces.length])
 
     if (!user) {
         return (
@@ -42,13 +46,15 @@ const Layout = () => {
         </div>
     )
 
+    console.log(workspaces);
     if (user && workspaces.length === 0) {
         return (
             <div className='min-h-screen flex justify-center items-center'>
-                <CreateOrganization/>
+                <CreateOrganization />
             </div>
         )
     }
+    
 
     return (
         <div className="flex bg-white dark:bg-zinc-950 text-gray-900 dark:text-slate-100">
